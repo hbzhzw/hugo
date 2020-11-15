@@ -17,6 +17,12 @@ dependencies {
   implementation 'org.aspectj:aspectjrt:1.8.6'
 }
 
+//NOTE: the user's build.gradle should add following buildscript dependecies
+// classpath 'org.aspectj:aspectjrt:1.8.6'
+// classpath 'org.aspectj:aspectjweaver:1.8.6'
+// classpath 'org.aspectj:aspectjtools:1.8.6'
+// classpath 'com.jakewharton.hugo:hugo-plugin:1.2.3-SNAPSHOT'
+
 //pluginBundle {
 //    website = 'https://github.com/JakeWharton/hugo/'
 //    vcsUrl = 'https://github.com/JakeWharton/hugo/'
