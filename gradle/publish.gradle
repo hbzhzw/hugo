@@ -1,0 +1,151 @@
+/** 使用示例
+apply from: '../gradle/publish.gradle'
+group = 'com.tencent.qqsports'
+version = '1.0.0'
+ext.artifactId = "channel-sdk"
+**/
+
+apply plugin: 'maven-publish'
+
+def getPublishVersion() {
+    return DEFAULT_VERSION != project.version ? project.version : DEFAULT_VERSION
+}
+
+boolean isSnapshotVersion() {
+    String version = getPublishVersion()
+    return version != null && version.toUpperCase().contains("SNAPSHOT")
+}
+
+def getPublishGroupId() {
+    return project.group ? project.group : 'com.tencent.qqsports'
+}
+
+def getPublishArtifactId() {
+    return project.hasProperty("artifactId") ? project.artifactId : project.name
+}
+
+def findDepArtifactId(String projName) {
+    def depProj = rootProject.findProject(projName)
+    def artifactId = depProj && depProj.ext.has("artifactId") ? depProj.ext.get("artifactId") : null
+    return artifactId ? artifactId : projName
+}
+
+def getArtifactTask() {
+    if (project.plugins.findPlugin('com.android.library')) {
+        String artifactTaskName = isSnapshotVersion() ? "bundleDebugAar" : "bundleReleaseAar"
+        logger.lifecycle "artifactTask: ${artifactTaskName}"
+        return isSnapshotVersion() ? bundleDebugAar : bundleReleaseAar
+    }
+    return jar
+}
+
+def getDepArtifactVersion(String projName, String depVersion) {
+    def depProj = rootProject.findProject(projName)
+    return depProj ? depProj.version : depVersion
+}
+
+def isNeedIncludeDeps() {
+    return project.ext.has("includeDeps") && project.ext.get("includeDeps") as Boolean
+}
+
+def xmlAddDependency(Node parentNode, Dependency dep, String scope) {
+    if (dep.group == null || dep.version == null 
+            || dep.name == null || dep.name == "unspecified") {
+        return // ignore invalid dependencies
+    }
+    final dependencyNode = parentNode.appendNode('dependency')
+    dependencyNode.appendNode('groupId', dep.group)
+    dependencyNode.appendNode('artifactId', findDepArtifactId(dep.name))
+    dependencyNode.appendNode('version', getDepArtifactVersion(dep.name, dep.version))
+    dependencyNode.appendNode('scope', scope)
+    dep.artifacts.each { art ->
+        logger.lifecycle "ext: ${art.extension} - ${art.classifier}"
+        dependencyNode.appendNode('type', art.extension)
+        dependencyNode.appendNode('classifier', art.classifier)
+    }
+    if (!dep.transitive) {
+        // If this dependency is not transitive, we should force exclude all its dependencies from the POM
+        final exclusionNode = dependencyNode.appendNode('exclusions').appendNode('exclusion')
+            exclusionNode.appendNode('groupId', '*')
+            exclusionNode.appendNode('artifactId', '*')
+    } else if (!dep.properties.excludeRules.empty) {
+        // Otherwise add specified exclude rules
+        final exclusionsNode = dependencyNode.appendNode('exclusions')
+        dep.properties.excludeRules.each { rule ->
+            final exclusionNode = exclusionsNode.appendNode('exclusion')
+            exclusionNode.appendNode('groupId', rule.group ?: '*')
+            exclusionNode.appendNode('artifactId', rule.module ?: '*')
+        }
+    }
+}
+
+def xmlDepForConfigs(Node parentNode, ConfigurationContainer configContainer) {
+    // logger.lifecycle "parentNode: $parentNode, config: $configContainer"
+    configContainer.getNames().forEach { String name ->  
+        if (name == "implementation" || name == "compile" || name == "api") {
+            configContainer.getByName(name) {
+                getDependencies().forEach {
+                    xmlAddDependency(parentNode, it, "compile")
+                }
+            }
+        } else if (name == "runtimeOnly") {
+            configContainer.getByName(name) {
+                getDependencies().forEach {
+                    xmlAddDependency(parentNode, it, "runtime")
+                }
+            }
+
+        }
+    }
+}
+
+if (!project.hasProperty("publish_repo_name")) {
+    logger.lifecycle "define default publish repo properties"
+    ext {
+        publish_repo_name = "tencentRepo"
+        publish_repo = "https://mirrors.tencent.com/repository/maven/qqsports"
+        publish_repo_snapshot = "https://mirrors.tencent.com/repository/maven/qqsports-snapshots"
+        publish_repo_user_name = "g_qqSportsAndroid"
+        publish_repo_passwd = "6e7a624c9b2c11eaba0c6c92bf47000d"
+    }
+} else {
+    logger.info "repoName: ${publish_repo_name}, url: ${publish_repo}, " +
+                "userName: ${publish_repo_user_name}, user passwd: ${publish_repo_passwd}"
+}
+
+project.afterEvaluate {
+    logger.lifecycle "publish task config: ${getPublishGroupId()}:${getPublishArtifactId()}:${getPublishVersion()}"
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                artifactId = getPublishArtifactId()
+                groupId = getPublishGroupId()
+                version = getPublishVersion()
+                artifact getArtifactTask()
+                //artifact androidJavadocsJar
+                //artifact androidSourcesJar
+
+                if (isNeedIncludeDeps()) {
+                    pom.withXml {
+                        final dependenciesNode = asNode().appendNode('dependencies')
+                        xmlDepForConfigs(dependenciesNode, project.getConfigurations())
+                    }
+                }
+            }
+        }
+
+        repositories {
+            maven {
+                name = publish_repo_name
+                url = isSnapshotVersion() ? publish_repo_snapshot : publish_repo
+                credentials {
+                    username publish_repo_user_name
+                    password publish_repo_passwd
+                }
+                authentication{
+                    basic(BasicAuthentication)
+                }
+            }
+        }
+    }
+}

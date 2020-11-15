@@ -26,20 +26,20 @@ class HugoPlugin implements Plugin<Project> {
     }
 
     project.dependencies {
-      debugCompile 'com.jakewharton.hugo:hugo-runtime:1.2.2-SNAPSHOT'
+      debugImplementation 'com.jakewharton.hugo:hugo-runtime:1.2.3-SNAPSHOT'
       // TODO this should come transitively
-      debugCompile 'org.aspectj:aspectjrt:1.8.6'
-      compile 'com.jakewharton.hugo:hugo-annotations:1.2.2-SNAPSHOT'
+      debugImplementation 'org.aspectj:aspectjrt:1.8.6'
+      implementation 'com.jakewharton.hugo:hugo-annotations:1.2.3-SNAPSHOT'
     }
 
     project.extensions.create('hugo', HugoExtension)
 
     variants.all { variant ->
       if (!variant.buildType.isDebuggable()) {
-        log.debug("Skipping non-debuggable build type '${variant.buildType.name}'.")
+        log.info("Skipping non-debuggable build type '${variant.buildType.name}'.")
         return;
       } else if (!project.hugo.enabled) {
-        log.debug("Hugo is not disabled.")
+        log.info("Hugo is not disabled.")
         return;
       }
 
@@ -54,8 +54,7 @@ class HugoPlugin implements Plugin<Project> {
             "-classpath", javaCompile.classpath.asPath,
             "-bootclasspath", project.android.bootClasspath.join(File.pathSeparator)
         ]
-        log.debug "ajc args: " + Arrays.toString(args)
-
+        log.lifecycle "ajc args: " + Arrays.toString(args)
         MessageHandler handler = new MessageHandler(true);
         new Main().run(args, handler);
         for (IMessage message : handler.getMessages(null, true)) {

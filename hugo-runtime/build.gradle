@@ -3,13 +3,12 @@ import org.aspectj.bridge.MessageHandler
 import org.aspectj.tools.ajc.Main
 
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
+apply from: '../gradle/publish.gradle'
 
 dependencies {
-  compile 'org.aspectj:aspectjrt:1.8.6'
-  compile project(':hugo-annotations')
-
-  testCompile 'junit:junit:4.12'
+  implementation 'org.aspectj:aspectjrt:1.8.6'
+  implementation project(':hugo-annotations')
+  testImplementation 'junit:junit:4.12'
 }
 
 android {
@@ -22,9 +21,13 @@ android {
   }
 }
 
+logger.lifecycle "iterate library variants.all"
+
 android.libraryVariants.all { variant ->
+  logger.lifecycle "variant: $variant"
   JavaCompile javaCompile = variant.javaCompile
   javaCompile.doLast {
+    logger.lifecycle "=====> aspectj start to process <====="
     String[] args = [
         "-showWeaveInfo",
         "-1.5",
@@ -35,6 +38,7 @@ android.libraryVariants.all { variant ->
         "-bootclasspath", android.bootClasspath.join(File.pathSeparator)
     ]
 
+    logger.lifecycle "apectj args: $args"
     MessageHandler handler = new MessageHandler(true);
     new Main().run(args, handler)
 
@@ -48,10 +52,10 @@ android.libraryVariants.all { variant ->
           break;
         case IMessage.WARNING:
         case IMessage.INFO:
-          log.info message.message, message.thrown
+          log.error message.message, message.thrown
           break;
         case IMessage.DEBUG:
-          log.debug message.message, message.thrown
+          log.error message.message, message.thrown
           break;
       }
     }

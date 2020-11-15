@@ -1,12 +1,18 @@
 buildscript {
   repositories {
-    mavenCentral()
-    jcenter()
+    //mavenCentral()
+    //jcenter()
+    maven {
+        url "https://mirrors.tencent.com/nexus/repository/maven-public/"
+    }
+    maven {
+        url "https://mirrors.tencent.com/nexus/repository/maven-public/"
+    }
   }
 
   dependencies {
-    classpath 'org.gradle.api.plugins:gradle-nexus-plugin:0.7'
-    classpath 'com.android.tools.build:gradle:1.3.1'
+    // classpath 'org.gradle.api.plugins:gradle-nexus-plugin:0.7'
+    classpath 'com.android.tools.build:gradle:3.5.4'
     classpath 'org.aspectj:aspectjtools:1.8.6'
     classpath 'com.github.dcendents:android-maven-gradle-plugin:1.3'
   }
@@ -14,18 +20,34 @@ buildscript {
 
 allprojects {
   repositories {
-    mavenCentral()
+    // mavenCentral()
+    maven {
+        url "https://mirrors.tencent.com/nexus/repository/maven-public/"
+    }
+    maven {
+        url "https://mirrors.tencent.com/nexus/repository/maven-public/"
+    }
   }
 
   group = GROUP
   version = VERSION_NAME
-
-  apply plugin: 'maven'
 }
 
 ext {
-  compileSdkVersion = 23
-  buildToolsVersion = '23.0.1'
+  compileSdkVersion = 28
+  buildToolsVersion = '28.0.3'
+}
+
+task upload(type: Exec) {
+    group = "Publishing"
+    executable = './gradlew'
+    workingDir = rootProject.file('.')
+    args = [':hugo-annotations:publishMavenPublicationToTencentRepoRepository',
+            ':hugo-runtime:publishMavenPublicationToTencentRepoRepository',
+            ':hugo-plugin:publishMavenPublicationToTencentRepoRepository']
+    dependsOn ':hugo-annotations:clean'
+    dependsOn ':hugo-runtime:clean'
+    dependsOn 'hugo-plugin:clean'
 }
 
 task cleanExample(type: Exec) {
