@@ -101,13 +101,6 @@ def xmlDepForConfigs(Node parentNode, ConfigurationContainer configContainer) {
 
 if (!project.hasProperty("publish_repo_name")) {
     logger.lifecycle "define default publish repo properties"
-    ext {
-        publish_repo_name = "tencentRepo"
-        publish_repo = "https://mirrors.tencent.com/repository/maven/qqsports"
-        publish_repo_snapshot = "https://mirrors.tencent.com/repository/maven/qqsports-snapshots"
-        publish_repo_user_name = "g_qqSportsAndroid"
-        publish_repo_passwd = "6e7a624c9b2c11eaba0c6c92bf47000d"
-    }
 } else {
     logger.info "repoName: ${publish_repo_name}, url: ${publish_repo}, " +
                 "userName: ${publish_repo_user_name}, user passwd: ${publish_repo_passwd}"
