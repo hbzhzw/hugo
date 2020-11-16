@@ -27,7 +27,6 @@ class HugoPlugin implements Plugin<Project> {
 
     project.dependencies {
       debugImplementation 'com.jakewharton.hugo:hugo-runtime:1.2.3-SNAPSHOT'
-      // TODO this should come transitively
       debugImplementation 'org.aspectj:aspectjrt:1.8.6'
       implementation 'com.jakewharton.hugo:hugo-annotations:1.2.3-SNAPSHOT'
     }
@@ -54,7 +53,7 @@ class HugoPlugin implements Plugin<Project> {
             "-classpath", javaCompile.classpath.asPath,
             "-bootclasspath", project.android.bootClasspath.join(File.pathSeparator)
         ]
-        log.lifecycle "ajc args: " + Arrays.toString(args)
+        log.debug "ajc args: " + Arrays.toString(args)
         MessageHandler handler = new MessageHandler(true);
         new Main().run(args, handler);
         for (IMessage message : handler.getMessages(null, true)) {
