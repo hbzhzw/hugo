@@ -46,10 +46,10 @@ public class Hugo {
     long startNanos = System.nanoTime();
     Object result = joinPoint.proceed();
     long stopNanos = System.nanoTime();
-    long lengthMillis = TimeUnit.NANOSECONDS.toMillis(stopNanos - startNanos);
+    // long lengthMillis = TimeUnit.NANOSECONDS.toMillis(stopNanos - startNanos);
+    long lengthMicros = TimeUnit.NANOSECONDS.toMicros(stopNanos - startNanos);
 
-    exitMethod(joinPoint, result, lengthMillis);
-
+    exitMethod(joinPoint, result, lengthMicros);
     return result;
   }
 
@@ -77,16 +77,14 @@ public class Hugo {
     if (Looper.myLooper() != Looper.getMainLooper()) {
       builder.append(" [Thread:\"").append(Thread.currentThread().getName()).append("\"]");
     }
-
-    Log.v(asTag(cls), builder.toString());
-
+    Loger.d(asTag(cls), builder.toString());
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       final String section = builder.toString().substring(2);
       Trace.beginSection(section);
     }
   }
 
-  private static void exitMethod(JoinPoint joinPoint, Object result, long lengthMillis) {
+  private static void exitMethod(JoinPoint joinPoint, Object result, long lengthMicros) {
     if (!enabled) return;
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
@@ -94,7 +92,6 @@ public class Hugo {
     }
 
     Signature signature = joinPoint.getSignature();
-
     Class<?> cls = signature.getDeclaringType();
     String methodName = signature.getName();
     boolean hasReturnType = signature instanceof MethodSignature
@@ -103,21 +100,18 @@ public class Hugo {
     StringBuilder builder = new StringBuilder("\u21E0 ")
         .append(methodName)
         .append(" [")
-        .append(lengthMillis)
-        .append("ms]");
+        .append(lengthMicros)
+        .append("us]");
 
     if (hasReturnType) {
       builder.append(" = ");
       builder.append(Strings.toString(result));
     }
-
-    Log.v(asTag(cls), builder.toString());
+    Loger.d(asTag(cls), builder.toString());
   }
 
+  @SuppressWarnings("ConstantConditions")
   private static String asTag(Class<?> cls) {
-    if (cls.isAnonymousClass()) {
-      return asTag(cls.getEnclosingClass());
-    }
-    return cls.getSimpleName();
+    return cls.isAnonymousClass() ? asTag(cls.getEnclosingClass()) : cls.getSimpleName();
   }
 }

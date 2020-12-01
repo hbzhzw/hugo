@@ -9,7 +9,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.compile.JavaCompile
 
-class HugoPlugin implements Plugin<Project> {
+public class HugoPlugin implements Plugin<Project> {
   @Override void apply(Project project) {
     def hasApp = project.plugins.withType(AppPlugin)
     def hasLib = project.plugins.withType(LibraryPlugin)
@@ -26,9 +26,9 @@ class HugoPlugin implements Plugin<Project> {
     }
 
     project.dependencies {
-      debugImplementation 'com.jakewharton.hugo:hugo-runtime:1.2.3-SNAPSHOT'
+      debugImplementation 'com.jakewharton.hugo:hugo-runtime:1.2.4'
       debugImplementation 'org.aspectj:aspectjrt:1.8.6'
-      implementation 'com.jakewharton.hugo:hugo-annotations:1.2.3-SNAPSHOT'
+      implementation 'com.jakewharton.hugo:hugo-annotations:1.2.4'
     }
 
     project.extensions.create('hugo', HugoExtension)
